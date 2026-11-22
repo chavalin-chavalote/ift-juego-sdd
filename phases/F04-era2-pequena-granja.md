@@ -5,7 +5,7 @@
 ## Tareas
 - [ ] T4.1 Sistema de agentes: entidad, cola de tareas, IA de movimiento sobre la cuadrícula (pathfinding simple).
 - [ ] T4.2 Trabajadores contratables (plantar, regar, cosechar) con eficiencia y coste creciente.
-- [ ] T4.3 Cadena de transporte: carretillas y cajas de almacenamiento; capacidad y cuello de botella.
+- [ ] T4.3 Cadena de transporte: almacén, camión cargable, viaje con bloqueo y mejoras de capacidad/velocidad.
 - [ ] T4.4 Riego: regaderas mejoradas y aspersores.
 - [ ] T4.5 Compra de parcelas y expansión visible del mapa.
 - [ ] T4.6 Cultivos: lechuga, zanahoria, patata.

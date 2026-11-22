@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { BigNumber } from "../core/numbers/BigNumber";
 import { formatBigNumber } from "../core/numbers/format";
+import { levelCost } from "../core/economy/Economy";
 import { FarmScene } from "./FarmScene";
 import { upgrades, useGameStore } from "./store";
 
 export function App() {
   const [zoom, setZoom] = useState(62);
+  const [purchaseQuantity, setPurchaseQuantity] = useState<1 | 10 | 25 | "max">(1);
   const game = useGameStore((state) => state.game);
   const farm = useGameStore((state) => state.farm);
   const selectedId = useGameStore((state) => state.selectedParcelId);
@@ -13,6 +15,10 @@ export function App() {
   const tick = useGameStore((state) => state.tick);
   const clearFloatingText = useGameStore((state) => state.clearFloatingText);
   const parcel = farm.parcels.find((item) => item.id === selectedId);
+  const warehouseLevel = game.upgradeLevels.warehouse ?? 0;
+  const truckCapacityLevel = game.upgradeLevels.truck_capacity ?? 0;
+  const storageCapacity = Math.floor(40 * (1 + warehouseLevel * 0.25));
+  const truckCapacity = 20 + truckCapacityLevel * 10;
 
   useEffect(() => {
     const timer = window.setInterval(() => tick(0.1), 100);
@@ -32,6 +38,15 @@ export function App() {
     : parcel?.stage === "empty"
       ? "Parcela vacía"
       : `Tomate · ${parcel?.stage}`;
+  const nextUpgrade = upgrades
+    .map((upgrade) => {
+      const level = game.upgradeLevels[upgrade.id] ?? 0;
+      return { upgrade, level, cost: levelCost(
+        { baseCost: upgrade.baseCost, growth: upgrade.growth, maxLevel: upgrade.maxLevel },
+        level,
+      ) };
+    })
+    .sort((left, right) => left.cost.cmp(right.cost))[0];
 
   return (
     <main
@@ -41,7 +56,8 @@ export function App() {
       <header className="hud">
         <div className="brand">Idle Farm</div>
         <div className="stat"><span>Dinero</span><strong>{money}</strong></div>
-        <div className="stat"><span>Stock</span><strong>{farm.stock}</strong></div>
+        <div className="stat"><span>Almacén</span><strong>{farm.stock}/{storageCapacity}</strong></div>
+        <div className="stat"><span>Camión</span><strong>{farm.truckStatus === "available" ? `${truckCapacity} máx.` : `${farm.truckCargo} · ${Math.ceil(farm.truckRemainingSeconds)}s`}</strong></div>
         <div className="stat"><span>Era</span><strong>1 · Manual</strong></div>
       </header>
 
@@ -84,14 +100,37 @@ export function App() {
         )}
         {!parcel && <p>Selecciona una parcela para verla.</p>}
         {farm.stock > 0 && (
-          <button className="sell" onClick={() => useGameStore.getState().sellStock()}>
-            Transportar y vender · {farm.stock}
+          <button
+            className="sell"
+            disabled={farm.truckStatus !== "available"}
+            onClick={() => useGameStore.getState().sendTruck()}
+          >
+            {farm.truckStatus === "available"
+              ? `Enviar camión · ${Math.min(farm.stock, truckCapacity)} tomates`
+              : `Camión en ruta · vuelve en ${Math.ceil(farm.truckRemainingSeconds)}s`}
           </button>
         )}
       </aside>
 
       <aside className="upgrades">
         <h2>Mejoras</h2>
+        {nextUpgrade && (
+          <div className="next-objective">
+            <span>Siguiente objetivo cercano</span>
+            <strong>{nextUpgrade.upgrade.name} · {formatBigNumber(nextUpgrade.cost)} $</strong>
+          </div>
+        )}
+        <div className="quantity-controls" aria-label="Cantidad de compra">
+          {(["1", "10", "25", "max"] as const).map((quantity) => (
+            <button
+              key={quantity}
+              className={purchaseQuantity === (quantity === "max" ? "max" : Number(quantity)) ? "active" : ""}
+              onClick={() => setPurchaseQuantity(quantity === "max" ? "max" : Number(quantity) as 1 | 10 | 25)}
+            >
+              {quantity === "max" ? "Máx" : `x${quantity}`}
+            </button>
+          ))}
+        </div>
         <div className="upgrade-list">
           {upgrades.map((upgrade) => {
             const level = game.upgradeLevels[upgrade.id] ?? 0;
@@ -100,7 +139,7 @@ export function App() {
               <button
                 className="upgrade-card"
                 key={upgrade.id}
-                onClick={() => useGameStore.getState().buyUpgrade(upgrade.id, 1)}
+                onClick={() => useGameStore.getState().buyUpgrade(upgrade.id, purchaseQuantity)}
               >
                 <span>
                   <strong>{upgrade.name}</strong>

@@ -71,6 +71,37 @@ function ParcelMesh({ id, x, z }: ParcelMeshProps) {
   );
 }
 
+function DeliveryTruck() {
+  const truckStatus = useGameStore((state) => state.farm.truckStatus);
+  const remaining = useGameStore((state) => state.farm.truckRemainingSeconds);
+  const trip = useGameStore((state) => state.farm.truckTripSeconds);
+  const progress = truckStatus === "in_transit" && trip > 0
+    ? 1 - remaining / trip
+    : 0;
+  const position: [number, number, number] = truckStatus === "in_transit"
+    ? [2.8 - progress * 5.6, 0.32, 3.15]
+    : [3.05, 0.32, 3.15];
+
+  return (
+    <group position={position}>
+      <mesh castShadow position={[0, 0.18, 0]}>
+        <boxGeometry args={[0.62, 0.38, 0.88]} />
+        <meshStandardMaterial color={truckStatus === "in_transit" ? "#e58a32" : "#4d8238"} roughness={0.7} />
+      </mesh>
+      <mesh castShadow position={[0, 0.27, 0.5]}>
+        <boxGeometry args={[0.62, 0.32, 0.28]} />
+        <meshStandardMaterial color="#bcd4d6" roughness={0.4} />
+      </mesh>
+      {[-0.36, 0.36].map((x) => (
+        <mesh key={x} position={[x, -0.05, 0.25]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.11, 0.11, 0.08, 12]} />
+          <meshStandardMaterial color="#30302f" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 export function FarmScene({ zoom }: { readonly zoom: number }) {
   const parcels = useGameStore((state) => state.farm.parcels);
   const positions = useMemo(() => parcels.map((parcel) => ({ id: parcel.id, x: parcel.x, z: parcel.z })), [parcels]);
@@ -92,6 +123,7 @@ export function FarmScene({ zoom }: { readonly zoom: number }) {
       {positions.map((position) => (
         <ParcelMesh key={position.id} {...position} />
       ))}
+      <DeliveryTruck />
     </Canvas>
   );
 }

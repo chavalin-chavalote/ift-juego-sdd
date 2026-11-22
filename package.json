@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "balance": "tsx src/tools/balance-simulator.ts",
+    "balance:v1": "tsx src/tools/balance-simulator-v1.ts",
     "ci": "npm run build && npm run test:coverage"
   },
   "dependencies": {

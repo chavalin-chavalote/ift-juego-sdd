@@ -2,7 +2,7 @@
 
 Juego web Idle/Incremental isométrico 2.5D: de 4 tomates a un imperio agrícola futurista.
 
-> **Estado:** Fase 2 completada. Vertical slice jugable de Era 1 disponible; la siguiente fase puede comenzar sin ambigüedad técnica.
+> **Estado:** Fase 3 completada. Economía completa, mejoras por datos y balance v1 disponibles; la siguiente fase puede comenzar sin ambigüedad técnica.
 
 ## Cómo funciona este SDD
 1. `constitution.md`: principios no negociables (calidad, arquitectura, balance).

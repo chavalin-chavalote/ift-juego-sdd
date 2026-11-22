@@ -13,6 +13,41 @@ export const eraOneCatalog: unknown = {
     unlock: "era_1",
     visualStages: ["seed", "sprout", "growing", "mature"],
     qualityRange: [0.8, 1.2],
+  }, {
+    id: "lettuce", nameKey: "crop.lettuce", eraId: "era_1",
+    seedCost: "0.3", growthSeconds: 3, productionCost: "0.03",
+    quantityPerCycle: 6, sellPrice: "0.35", unlock: "era_1",
+    visualStages: ["seed", "sprout", "growing", "mature"], qualityRange: [0.8, 1.2],
+  }, {
+    id: "carrot", nameKey: "crop.carrot", eraId: "era_1",
+    seedCost: "0.4", growthSeconds: 4, productionCost: "0.04",
+    quantityPerCycle: 5, sellPrice: "0.42", unlock: "era_1",
+    visualStages: ["seed", "sprout", "growing", "mature"], qualityRange: [0.8, 1.2],
+  }, {
+    id: "potato", nameKey: "crop.potato", eraId: "era_2",
+    seedCost: "1", growthSeconds: 7, productionCost: "0.12",
+    quantityPerCycle: 8, sellPrice: "0.55", unlock: "era_2",
+    visualStages: ["seed", "sprout", "growing", "mature"], qualityRange: [0.8, 1.2],
+  }, {
+    id: "corn", nameKey: "crop.corn", eraId: "era_2",
+    seedCost: "1.5", growthSeconds: 9, productionCost: "0.18",
+    quantityPerCycle: 6, sellPrice: "0.9", unlock: "era_2",
+    visualStages: ["seed", "sprout", "growing", "mature"], qualityRange: [0.8, 1.2],
+  }, {
+    id: "wheat", nameKey: "crop.wheat", eraId: "era_3",
+    seedCost: "3", growthSeconds: 12, productionCost: "0.25",
+    quantityPerCycle: 10, sellPrice: "0.75", unlock: "era_3",
+    visualStages: ["seed", "sprout", "growing", "mature"], qualityRange: [0.8, 1.2],
+  }, {
+    id: "strawberry", nameKey: "crop.strawberry", eraId: "era_4",
+    seedCost: "8", growthSeconds: 15, productionCost: "0.6",
+    quantityPerCycle: 12, sellPrice: "1.8", unlock: "era_4",
+    visualStages: ["seed", "sprout", "growing", "mature"], qualityRange: [0.8, 1.2],
+  }, {
+    id: "pumpkin", nameKey: "crop.pumpkin", eraId: "era_4",
+    seedCost: "12", growthSeconds: 20, productionCost: "0.8",
+    quantityPerCycle: 8, sellPrice: "3", unlock: "era_4",
+    visualStages: ["seed", "sprout", "growing", "mature"], qualityRange: [0.8, 1.2],
   }],
   upgrades: [{
     id: "tomato_quantity",
@@ -43,6 +78,18 @@ export const eraOneCatalog: unknown = {
     nameKey: "era.manual",
     entryCost: "0",
     scaleMultiplier: 1,
+  }, {
+    id: "era_2", index: 2, nameKey: "era.small_farm",
+    entryCost: "500", scaleMultiplier: 75,
+  }, {
+    id: "era_3", index: 3, nameKey: "era.industrial",
+    entryCost: "50000", scaleMultiplier: 75,
+  }, {
+    id: "era_4", index: 4, nameKey: "era.smart",
+    entryCost: "5000000", scaleMultiplier: 100,
+  }, {
+    id: "era_5", index: 5, nameKey: "era.futuristic",
+    entryCost: "1000000000", scaleMultiplier: 100,
   }],
 };
 

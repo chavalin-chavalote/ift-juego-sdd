@@ -20,6 +20,9 @@ Prioridad: **M** = Must, **S** = Should, **C** = Could.
 
 ## 3. Acciones manuales (Era 1)
 - **REQ-MAN-01 (M)** Plantar, regar, cosechar, transportar y vender manualmente.
+- **REQ-MAN-04 (M)** La cosecha se almacena en un almacén; nunca se vende automáticamente al cosechar.
+- **REQ-MAN-05 (M)** Enviar el almacén requiere un camión disponible. El camión carga hasta su capacidad y bloquea nuevos envíos hasta volver.
+- **REQ-MAN-06 (M)** El almacén, la capacidad del camión y la duración del viaje tienen mejoras independientes por datos.
 - **REQ-MAN-02 (M)** Feedback inmediato: partículas, números flotantes, sonido opcional.
 - **REQ-MAN-03 (S)** Acciones en lote (arrastrar para plantar/cosechar varias parcelas).
 

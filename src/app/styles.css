@@ -60,6 +60,11 @@ button { font: inherit; }
 }
 .context-panel button + button { margin-top: 8px; }
 .context-panel .sell { margin-top: 8px; background: #c66b32; }
+.context-panel .sell:disabled {
+  cursor: not-allowed;
+  color: #eee8d5;
+  background: #8a8170;
+}
 
 .progress span { font-size: 12px; }
 .progress div { height: 8px; margin-top: 5px; overflow: hidden; border-radius: 8px; background: #ddd8bd; }
@@ -75,6 +80,26 @@ button { font: inherit; }
   background: rgba(250, 246, 225, .97);
 }
 .upgrade-list { display: grid; gap: 8px; }
+.next-objective {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid #95ae70;
+  border-radius: 8px;
+  background: #edf4dc;
+  font-size: 12px;
+}
+.next-objective span { color: #718066; }
+.quantity-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 8px; }
+.quantity-controls button {
+  min-height: 36px;
+  border: 1px solid #d0c79f;
+  border-radius: 7px;
+  background: #fffdf1;
+  cursor: pointer;
+}
+.quantity-controls button.active { color: white; border-color: #4d8238; background: #4d8238; }
 .upgrade-card {
   min-height: 68px;
   display: grid;

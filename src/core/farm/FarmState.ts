@@ -12,18 +12,24 @@ export interface Parcel {
 export interface FarmState {
   readonly parcels: readonly Parcel[];
   readonly stock: number;
+  readonly storageCapacity: number;
+  readonly truckCapacity: number;
+  readonly truckCargo: number;
+  readonly truckStatus: "available" | "in_transit";
+  readonly truckRemainingSeconds: number;
+  readonly truckTripSeconds: number;
 }
 
 export type FarmCommand =
   | { readonly type: "plant"; readonly parcelId: number; readonly seedCost: number }
   | { readonly type: "water"; readonly parcelId: number }
-  | { readonly type: "harvest"; readonly parcelId: number; readonly quantity: number }
-  | { readonly type: "sell_stock"; readonly price: number }
+  | { readonly type: "harvest"; readonly parcelId: number; readonly quantity: number; readonly warehouseCapacity: number }
+  | { readonly type: "send_truck"; readonly truckCapacity: number; readonly tripSeconds: number }
   | { readonly type: "unlock_parcel"; readonly parcelId: number; readonly cost: number }
   | { readonly type: "advance"; readonly deltaSeconds: number; readonly growthSeconds: number };
 
 export interface FarmEvent {
-  readonly type: "planted" | "watered" | "harvested" | "sold" | "unlocked";
+  readonly type: "planted" | "watered" | "harvested" | "truck_sent" | "truck_returned" | "unlocked";
   readonly parcelId?: number;
   readonly amount?: number;
 }
@@ -43,5 +49,14 @@ export function createFarmState(): FarmState {
       });
     }
   }
-  return { parcels, stock: 0 };
+  return {
+    parcels,
+    stock: 0,
+    storageCapacity: 40,
+    truckCapacity: 20,
+    truckCargo: 0,
+    truckStatus: "available",
+    truckRemainingSeconds: 0,
+    truckTripSeconds: 12,
+  };
 }

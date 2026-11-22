@@ -10,6 +10,9 @@ import { encodeSave, decodeSave } from "../src/core/save/SaveEnvelope";
 import { loadEraOneCatalog } from "../src/data/catalog";
 import { FarmEngine } from "../src/core/farm/FarmEngine";
 import { createFarmState } from "../src/core/farm/FarmState";
+import { resolveMultipliers } from "../src/core/economy/Multipliers";
+import { maintenancePerSecond, netIncome } from "../src/core/economy/Maintenance";
+import { applyUpgradeEffect } from "../src/core/economy/UpgradeEffects";
 
 const upgrade = { baseCost: "5", growth: 1.15, maxLevel: 100 };
 
@@ -73,6 +76,30 @@ describe("Production", () => {
   });
 });
 
+describe("F03 multipliers and economy safeguards", () => {
+  it("adds within categories before applying multiplicative categories and globals", () => {
+    const result = resolveMultipliers({
+      additive: { speed: [0.2, 0.1], quality: [0.5] },
+      multiplicative: { era: 2, machinery: 1.5 },
+      global: [0.8],
+    });
+    expect(result).toBeCloseTo(1.3 * 1.5 * 2 * 1.5 * 0.8);
+  });
+
+  it("clamps maintenance-negative income to zero", () => {
+    const maintenance = maintenancePerSecond([{ buildingCost: "100", rate: 0.02 }]);
+    expect(maintenance.toString()).toBe("2");
+    expect(netIncome(BigNumber.from("1"), maintenance).toString()).toBe("0");
+    expect(netIncome(BigNumber.from("5"), maintenance).toString()).toBe("3");
+  });
+
+  it("applies real quantity, speed and efficiency effects", () => {
+    expect(applyUpgradeEffect({ type: "quantity_multiplier", value: 0.25 }, 2, 4)).toBe(6);
+    expect(applyUpgradeEffect({ type: "growth_speed", value: 0.2 }, 3, 5)).toBeCloseTo(2);
+    expect(applyUpgradeEffect({ type: "transport_efficiency", value: 0.15 }, 2, 10)).toBe(7);
+  });
+});
+
 describe("GameEngine", () => {
   const catalog = { tomato_quantity: upgrade };
 
@@ -108,6 +135,7 @@ describe("Data catalog", () => {
   it("loads and validates Era 1 data", () => {
     const catalog = loadEraOneCatalog();
     expect(catalog.crops[0]?.id).toBe("tomato");
+    expect(catalog.crops).toHaveLength(8);
     expect(catalog.eras[0]?.index).toBe(1);
   });
 });
@@ -133,17 +161,18 @@ describe("Manual farm", () => {
     state = farmEngine.dispatch(state, { type: "water", parcelId: 0 }).state;
     state = farmEngine.dispatch(state, { type: "water", parcelId: 0 }).state;
     state = farmEngine.dispatch(state, { type: "advance", deltaSeconds: 10, growthSeconds: 5 }).state;
-    const harvested = farmEngine.dispatch(state, { type: "harvest", parcelId: 0, quantity: 4 });
+    const harvested = farmEngine.dispatch(state, { type: "harvest", parcelId: 0, quantity: 4, warehouseCapacity: 40 });
     expect(harvested.state.stock).toBe(4);
-    const sold = farmEngine.dispatch(harvested.state, { type: "sell_stock", price: 0.5 });
-    expect(sold.income).toBe(2);
-    expect(sold.state.stock).toBe(0);
+    const sent = farmEngine.dispatch(harvested.state, { type: "send_truck", truckCapacity: 20, tripSeconds: 12 });
+    expect(sent.state.truckStatus).toBe("in_transit");
+    expect(sent.state.truckCargo).toBe(4);
+    expect(sent.state.stock).toBe(0);
   });
 
   it("does not harvest empty crops or unlock an already active parcel", () => {
     const farmEngine = new FarmEngine();
     const state = createFarmState();
-    expect(farmEngine.dispatch(state, { type: "harvest", parcelId: 0, quantity: 4 }).events).toHaveLength(0);
+    expect(farmEngine.dispatch(state, { type: "harvest", parcelId: 0, quantity: 4, warehouseCapacity: 40 }).events).toHaveLength(0);
     expect(farmEngine.dispatch(state, { type: "unlock_parcel", parcelId: 0, cost: 25 }).events).toHaveLength(0);
   });
 
@@ -152,6 +181,38 @@ describe("Manual farm", () => {
     const state = createFarmState();
     const result = farmEngine.dispatch(state, { type: "unlock_parcel", parcelId: 4, cost: 45 });
     expect(result.state.parcels[4]?.stage).toBe("empty");
+  });
+
+  it("stores harvest only up to warehouse capacity", () => {
+    const farmEngine = new FarmEngine();
+    let state = createFarmState();
+    state = { ...state, stock: 38 };
+    state = farmEngine.dispatch(state, { type: "plant", parcelId: 0, seedCost: 0.5 }).state;
+    state = farmEngine.dispatch(state, { type: "water", parcelId: 0 }).state;
+    state = farmEngine.dispatch(state, { type: "water", parcelId: 0 }).state;
+    state = farmEngine.dispatch(state, { type: "advance", deltaSeconds: 10, growthSeconds: 5 }).state;
+    const harvested = farmEngine.dispatch(state, {
+      type: "harvest",
+      parcelId: 0,
+      quantity: 4,
+      warehouseCapacity: 40,
+    });
+    expect(harvested.state.stock).toBe(40);
+  });
+
+  it("blocks sending a second truck and sells after the truck returns", () => {
+    const farmEngine = new FarmEngine();
+    let state = { ...createFarmState(), stock: 25 };
+    const sent = farmEngine.dispatch(state, { type: "send_truck", truckCapacity: 20, tripSeconds: 12 });
+    state = sent.state;
+    expect(state.truckCargo).toBe(20);
+    expect(state.stock).toBe(5);
+    expect(farmEngine.dispatch(state, { type: "send_truck", truckCapacity: 20, tripSeconds: 12 }).events).toHaveLength(0);
+
+    const advanced = farmEngine.dispatch(state, { type: "advance", deltaSeconds: 12, growthSeconds: 5 });
+    expect(advanced.state.truckStatus).toBe("available");
+    expect(advanced.state.truckCargo).toBe(0);
+    expect(advanced.events).toContainEqual({ type: "truck_returned", amount: 20 });
   });
 });
 
