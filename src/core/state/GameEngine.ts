@@ -12,6 +12,8 @@ export class GameEngine {
     switch (command.type) {
       case "add_income":
         return this.addIncome(state, BigNumber.from(command.amount));
+      case "spend":
+        return this.spend(state, BigNumber.from(command.amount));
       case "buy_upgrade":
         return this.buyUpgrade(state, command.upgradeId, command.quantity);
       case "tick":
@@ -38,6 +40,20 @@ export class GameEngine {
         sequence: nextSequence,
       },
       events: [{ type: "income_added", stateSequence: nextSequence, data: { amount: amount.toString() } }],
+    };
+  }
+
+  private spend(state: GameState, amount: BigNumber): CommandResult {
+    if (amount.cmp(BigNumber.zero()) <= 0) throw new Error("Spend amount must be positive");
+    if (BigNumber.from(state.money).cmp(amount) < 0) throw new Error("Insufficient funds");
+    const nextSequence = state.sequence + 1;
+    return {
+      state: {
+        ...state,
+        money: BigNumber.from(state.money).sub(amount).toString(),
+        sequence: nextSequence,
+      },
+      events: [{ type: "income_added", stateSequence: nextSequence, data: { amount: `-${amount.toString()}` } }],
     };
   }
 

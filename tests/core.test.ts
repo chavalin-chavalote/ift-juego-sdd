@@ -8,6 +8,8 @@ import { createInitialGameState } from "../src/core/state/GameState";
 import { GameEngine } from "../src/core/state/GameEngine";
 import { encodeSave, decodeSave } from "../src/core/save/SaveEnvelope";
 import { loadEraOneCatalog } from "../src/data/catalog";
+import { FarmEngine } from "../src/core/farm/FarmEngine";
+import { createFarmState } from "../src/core/farm/FarmState";
 
 const upgrade = { baseCost: "5", growth: 1.15, maxLevel: 100 };
 
@@ -107,6 +109,49 @@ describe("Data catalog", () => {
     const catalog = loadEraOneCatalog();
     expect(catalog.crops[0]?.id).toBe("tomato");
     expect(catalog.eras[0]?.index).toBe(1);
+  });
+});
+
+describe("Manual farm", () => {
+  it("plants, waters and advances tomatoes through the four visual stages", () => {
+    const farmEngine = new FarmEngine();
+    let state = createFarmState();
+    state = farmEngine.dispatch(state, { type: "plant", parcelId: 0, seedCost: 0.5 }).state;
+    expect(state.parcels[0]?.stage).toBe("seed");
+    state = farmEngine.dispatch(state, { type: "water", parcelId: 0 }).state;
+    expect(state.parcels[0]?.stage).toBe("sprout");
+    state = farmEngine.dispatch(state, { type: "water", parcelId: 0 }).state;
+    expect(state.parcels[0]?.stage).toBe("growing");
+    state = farmEngine.dispatch(state, { type: "advance", deltaSeconds: 5, growthSeconds: 5 }).state;
+    expect(state.parcels[0]?.stage).toBe("mature");
+  });
+
+  it("harvests mature crops into stock and sells the stock", () => {
+    const farmEngine = new FarmEngine();
+    let state = createFarmState();
+    state = farmEngine.dispatch(state, { type: "plant", parcelId: 0, seedCost: 0.5 }).state;
+    state = farmEngine.dispatch(state, { type: "water", parcelId: 0 }).state;
+    state = farmEngine.dispatch(state, { type: "water", parcelId: 0 }).state;
+    state = farmEngine.dispatch(state, { type: "advance", deltaSeconds: 10, growthSeconds: 5 }).state;
+    const harvested = farmEngine.dispatch(state, { type: "harvest", parcelId: 0, quantity: 4 });
+    expect(harvested.state.stock).toBe(4);
+    const sold = farmEngine.dispatch(harvested.state, { type: "sell_stock", price: 0.5 });
+    expect(sold.income).toBe(2);
+    expect(sold.state.stock).toBe(0);
+  });
+
+  it("does not harvest empty crops or unlock an already active parcel", () => {
+    const farmEngine = new FarmEngine();
+    const state = createFarmState();
+    expect(farmEngine.dispatch(state, { type: "harvest", parcelId: 0, quantity: 4 }).events).toHaveLength(0);
+    expect(farmEngine.dispatch(state, { type: "unlock_parcel", parcelId: 0, cost: 25 }).events).toHaveLength(0);
+  });
+
+  it("unlocks blocked parcels", () => {
+    const farmEngine = new FarmEngine();
+    const state = createFarmState();
+    const result = farmEngine.dispatch(state, { type: "unlock_parcel", parcelId: 4, cost: 45 });
+    expect(result.state.parcels[4]?.stage).toBe("empty");
   });
 });
 
