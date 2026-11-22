@@ -2,7 +2,7 @@
 
 Juego web Idle/Incremental isométrico 2.5D: de 4 tomates a un imperio agrícola futurista.
 
-> **Estado:** Fase 0 completada. **No existe código todavía.** La siguiente fase puede comenzar sin ambigüedad documental.
+> **Estado:** Fase 1 completada. Motor headless implementado y testeado; la siguiente fase puede comenzar sin ambigüedad técnica.
 
 ## Cómo funciona este SDD
 1. `constitution.md`: principios no negociables (calidad, arquitectura, balance).

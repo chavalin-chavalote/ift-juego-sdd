@@ -1,0 +1,22 @@
+{
+  "name": "idle-farm-tycoon",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "balance": "tsx src/tools/balance-simulator.ts",
+    "ci": "npm run build && npm run test:coverage"
+  },
+  "dependencies": {
+    "decimal.js": "^10.6.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.15",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}
