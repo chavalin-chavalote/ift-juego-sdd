@@ -4,6 +4,7 @@ import { formatBigNumber } from "../core/numbers/format";
 import { levelCost } from "../core/economy/Economy";
 import { FarmScene } from "./FarmScene";
 import { upgrades, useGameStore } from "./store";
+import tomateIcon from "../assets/2d/tomate-SD.png";
 
 export function App() {
   const [zoom, setZoom] = useState(62);
@@ -17,8 +18,13 @@ export function App() {
   const parcel = farm.parcels.find((item) => item.id === selectedId);
   const warehouseLevel = game.upgradeLevels.warehouse ?? 0;
   const truckCapacityLevel = game.upgradeLevels.truck_capacity ?? 0;
-  const storageCapacity = Math.floor(40 * (1 + warehouseLevel * 0.25));
+  const storageCapacity = Math.floor(40 * (1 + warehouseLevel * 0.25))
+    + farm.shedLevel * 20 + farm.boxesLevel * 10;
   const truckCapacity = 20 + truckCapacityLevel * 10;
+  const cropNames = { tomato: "Tomate", lettuce: "Lechuga", carrot: "Zanahoria", potato: "Patata" };
+  const cropCosts = { tomato: "0.5", lettuce: "0.3", carrot: "0.4", potato: "1" };
+  const workerCount = (role: "planting" | "watering" | "harvesting") =>
+    farm.workers.filter((worker) => worker.role === role).length;
 
   useEffect(() => {
     const timer = window.setInterval(() => tick(0.1), 100);
@@ -33,11 +39,13 @@ export function App() {
   }, [floatingTexts, clearFloatingText]);
 
   const money = formatBigNumber(BigNumber.from(game.money));
-  const parcelTitle = parcel?.stage === "blocked"
-    ? "Parcela bloqueada"
-    : parcel?.stage === "empty"
-      ? "Parcela vacía"
-      : `Tomate · ${parcel?.stage}`;
+  const parcelTitle = !parcel
+    ? "Granja"
+    : parcel.stage === "blocked"
+      ? "Parcela bloqueada"
+      : parcel.stage === "empty"
+        ? "Parcela vacía"
+        : `${cropNames[farm.selectedCrop]} · ${parcel.stage}`;
   const nextUpgrade = upgrades
     .map((upgrade) => {
       const level = game.upgradeLevels[upgrade.id] ?? 0;
@@ -54,11 +62,11 @@ export function App() {
       onWheel={(event) => setZoom((current) => Math.max(38, Math.min(82, current - event.deltaY * 0.02)))}
     >
       <header className="hud">
-        <div className="brand">Idle Farm</div>
+        <div className="brand"><img src={tomateIcon} alt="" width="20" height="20"/>   Idle Farm</div>
         <div className="stat"><span>Dinero</span><strong>{money}</strong></div>
         <div className="stat"><span>Almacén</span><strong>{farm.stock}/{storageCapacity}</strong></div>
         <div className="stat"><span>Camión</span><strong>{farm.truckStatus === "available" ? `${truckCapacity} máx.` : `${farm.truckCargo} · ${Math.ceil(farm.truckRemainingSeconds)}s`}</strong></div>
-        <div className="stat"><span>Era</span><strong>1 · Manual</strong></div>
+        <div className="stat"><span>Era</span><strong>{game.eraIndex} · {game.eraIndex === 1 ? "Manual" : "Pequeña granja"}</strong></div>
       </header>
 
       <section className="world">
@@ -82,7 +90,9 @@ export function App() {
               </button>
             )}
             {parcel.stage === "empty" && (
-              <button onClick={() => useGameStore.getState().plant(parcel.id)}>Sembrar tomate · 0.5 $</button>
+              <button onClick={() => useGameStore.getState().plant(parcel.id)}>
+                Sembrar {cropNames[farm.selectedCrop].toLowerCase()} · {cropCosts[farm.selectedCrop]} $
+              </button>
             )}
             {(parcel.stage === "seed" || parcel.stage === "sprout") && (
               <button onClick={() => useGameStore.getState().water(parcel.id)}>Regar</button>
@@ -114,6 +124,53 @@ export function App() {
 
       <aside className="upgrades">
         <h2>Mejoras</h2>
+        {game.eraIndex === 1 && (
+          <button
+            className="era-transition"
+            disabled={BigNumber.from(game.money).cmp(BigNumber.from("500")) < 0}
+            onClick={() => useGameStore.getState().enterEraTwo()}
+          >
+            Avanzar a Era 2 · 500 $
+          </button>
+        )}
+        {game.eraIndex >= 2 && (
+          <div className="era-automation">
+            <h3>Pequeña granja</h3>
+            <div className="crop-selector" aria-label="Cultivo activo">
+              {(["tomato", "lettuce", "carrot", "potato"] as const).map((crop) => (
+                <button
+                  key={crop}
+                  className={farm.selectedCrop === crop ? "active" : ""}
+                  onClick={() => useGameStore.getState().setCrop(crop)}
+                >
+                  {cropNames[crop]}
+                </button>
+              ))}
+            </div>
+            <div className="automation-grid">
+              <button onClick={() => useGameStore.getState().hireWorker("planting")}>
+                Contratar siembra <b>{workerCount("planting")}</b>
+              </button>
+              <button onClick={() => useGameStore.getState().hireWorker("watering")}>
+                Contratar riego <b>{workerCount("watering")}</b>
+              </button>
+              <button onClick={() => useGameStore.getState().hireWorker("harvesting")}>
+                Contratar cosecha <b>{workerCount("harvesting")}</b>
+              </button>
+              <button onClick={() => useGameStore.getState().upgradeSprinkler()}>
+                Aspersor <b>Lv. {farm.sprinklerLevel}</b>
+              </button>
+            </div>
+            <div className="building-grid">
+              <button onClick={() => useGameStore.getState().upgradeBuilding("shed")}>
+                Cobertizo <b>Lv. {farm.shedLevel}</b>
+              </button>
+              <button onClick={() => useGameStore.getState().upgradeBuilding("boxes")}>
+                Cajas <b>Lv. {farm.boxesLevel}</b>
+              </button>
+            </div>
+          </div>
+        )}
         {nextUpgrade && (
           <div className="next-objective">
             <span>Siguiente objetivo cercano</span>

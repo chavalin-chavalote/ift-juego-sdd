@@ -141,6 +141,28 @@ describe("Data catalog", () => {
 });
 
 describe("Manual farm", () => {
+  it("hires a planting worker and performs an unattended task", () => {
+    const farmEngine = new FarmEngine();
+    let state = createFarmState();
+    state = farmEngine.dispatch(state, { type: "enter_era", eraIndex: 2 }).state;
+    state = farmEngine.dispatch(state, { type: "hire_worker", role: "planting", efficiency: 1 }).state;
+    state = farmEngine.dispatch(state, { type: "advance", deltaSeconds: 2, growthSeconds: 5 }).state;
+    expect(state.workers).toHaveLength(1);
+    expect(state.parcels[0]?.stage).toBe("seed");
+  });
+
+  it("uses sprinklers to water and unlocking Era 2 enables potato cultivation", () => {
+    const farmEngine = new FarmEngine();
+    let state = createFarmState();
+    state = farmEngine.dispatch(state, { type: "enter_era", eraIndex: 2 }).state;
+    state = farmEngine.dispatch(state, { type: "set_crop", cropId: "potato" }).state;
+    state = farmEngine.dispatch(state, { type: "upgrade_sprinkler", level: 1 }).state;
+    state = farmEngine.dispatch(state, { type: "plant", parcelId: 0, seedCost: 1 }).state;
+    state = farmEngine.dispatch(state, { type: "advance", deltaSeconds: 2, growthSeconds: 5 }).state;
+    expect(state.selectedCrop).toBe("potato");
+    expect(state.sprinklerLevel).toBe(1);
+    expect(state.parcels[0]?.stage).toBe("sprout");
+  });
   it("plants, waters and advances tomatoes through the four visual stages", () => {
     const farmEngine = new FarmEngine();
     let state = createFarmState();

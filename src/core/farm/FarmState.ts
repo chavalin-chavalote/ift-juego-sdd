@@ -9,8 +9,31 @@ export interface Parcel {
   readonly watered: boolean;
 }
 
+export type CropId = "tomato" | "lettuce" | "carrot" | "potato";
+export type WorkerRole = "planting" | "watering" | "harvesting";
+
+export interface AgentPosition {
+  readonly x: number;
+  readonly z: number;
+}
+
+export interface Worker {
+  readonly id: string;
+  readonly role: WorkerRole;
+  readonly efficiency: number;
+  readonly position: AgentPosition;
+  readonly targetParcelId: number | null;
+}
+
 export interface FarmState {
   readonly parcels: readonly Parcel[];
+  readonly selectedCrop: CropId;
+  readonly eraIndex: number;
+  readonly workers: readonly Worker[];
+  readonly sprinklerLevel: number;
+  readonly shedLevel: number;
+  readonly boxesLevel: number;
+  readonly automationAccumulator: number;
   readonly stock: number;
   readonly storageCapacity: number;
   readonly truckCapacity: number;
@@ -24,6 +47,11 @@ export type FarmCommand =
   | { readonly type: "plant"; readonly parcelId: number; readonly seedCost: number }
   | { readonly type: "water"; readonly parcelId: number }
   | { readonly type: "harvest"; readonly parcelId: number; readonly quantity: number; readonly warehouseCapacity: number }
+  | { readonly type: "set_crop"; readonly cropId: CropId }
+  | { readonly type: "hire_worker"; readonly role: WorkerRole; readonly efficiency: number }
+  | { readonly type: "upgrade_sprinkler"; readonly level: number }
+  | { readonly type: "upgrade_building"; readonly building: "shed" | "boxes"; readonly level: number }
+  | { readonly type: "enter_era"; readonly eraIndex: number }
   | { readonly type: "send_truck"; readonly truckCapacity: number; readonly tripSeconds: number }
   | { readonly type: "unlock_parcel"; readonly parcelId: number; readonly cost: number }
   | { readonly type: "advance"; readonly deltaSeconds: number; readonly growthSeconds: number };
@@ -51,6 +79,13 @@ export function createFarmState(): FarmState {
   }
   return {
     parcels,
+    selectedCrop: "tomato",
+    eraIndex: 1,
+    workers: [],
+    sprinklerLevel: 0,
+    shedLevel: 0,
+    boxesLevel: 0,
+    automationAccumulator: 0,
     stock: 0,
     storageCapacity: 40,
     truckCapacity: 20,

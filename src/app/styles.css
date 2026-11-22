@@ -91,6 +91,34 @@ button { font: inherit; }
   font-size: 12px;
 }
 .next-objective span { color: #718066; }
+.era-transition {
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 10px;
+  border: 0;
+  border-radius: 9px;
+  color: white;
+  background: #9a6934;
+  font-weight: 800;
+  cursor: pointer;
+}
+.era-transition:disabled { background: #aaa38f; cursor: not-allowed; }
+.era-automation { display: grid; gap: 8px; margin-bottom: 10px; }
+.era-automation h3 { margin: 0; font-size: 14px; }
+.crop-selector, .automation-grid, .building-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+}
+.crop-selector button, .automation-grid button, .building-grid button {
+  min-height: 38px;
+  border: 1px solid #d0c79f;
+  border-radius: 7px;
+  background: #fffdf1;
+  cursor: pointer;
+}
+.crop-selector button.active { color: white; border-color: #4d8238; background: #4d8238; }
+.automation-grid button b, .building-grid button b { display: block; font-size: 11px; }
 .quantity-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 8px; }
 .quantity-controls button {
   min-height: 36px;

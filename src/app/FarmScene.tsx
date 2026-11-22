@@ -9,24 +9,29 @@ interface ParcelMeshProps {
   readonly z: number;
 }
 
-function Tomato({ stage }: { readonly stage: "seed" | "sprout" | "growing" | "mature" }) {
+function CropModel({ stage, crop }: {
+  readonly stage: "seed" | "sprout" | "growing" | "mature";
+  readonly crop: "tomato" | "lettuce" | "carrot" | "potato";
+}) {
   const sizes = stage === "seed" ? 0.08 : stage === "sprout" ? 0.16 : stage === "growing" ? 0.28 : 0.38;
   const fruit = stage === "mature";
+  const foliage = crop === "lettuce" ? "#78b84e" : crop === "carrot" ? "#63a84a" : crop === "potato" ? "#6f9843" : "#5e9c45";
+  const produce = crop === "lettuce" ? "#a8cf72" : crop === "carrot" ? "#e99032" : crop === "potato" ? "#b99b62" : "#df3b2f";
   return (
     <group position={[0, sizes * 0.5 + 0.12, 0]}>
       <mesh castShadow>
         <coneGeometry args={[sizes, sizes * 1.8, 6]} />
-        <meshStandardMaterial color={stage === "seed" ? "#9a6a3e" : "#5e9c45"} roughness={0.85} />
+        <meshStandardMaterial color={stage === "seed" ? "#9a6a3e" : foliage} roughness={0.85} />
       </mesh>
       {fruit && (
         <>
           <mesh position={[0.14, sizes * 0.65, 0]} castShadow>
             <sphereGeometry args={[0.09, 10, 8]} />
-            <meshStandardMaterial color="#df3b2f" roughness={0.65} />
+            <meshStandardMaterial color={produce} roughness={0.65} />
           </mesh>
           <mesh position={[-0.12, sizes * 0.55, 0.05]} castShadow>
             <sphereGeometry args={[0.09, 10, 8]} />
-            <meshStandardMaterial color="#e84a32" roughness={0.65} />
+            <meshStandardMaterial color={produce} roughness={0.65} />
           </mesh>
         </>
       )}
@@ -36,6 +41,7 @@ function Tomato({ stage }: { readonly stage: "seed" | "sprout" | "growing" | "ma
 
 function ParcelMesh({ id, x, z }: ParcelMeshProps) {
   const parcel = useGameStore((state) => state.farm.parcels.find((item) => item.id === id));
+  const crop = useGameStore((state) => state.farm.selectedCrop);
   const selected = useGameStore((state) => state.selectedParcelId === id);
   const selectParcel = useGameStore((state) => state.selectParcel);
   if (!parcel) return null;
@@ -53,7 +59,7 @@ function ParcelMesh({ id, x, z }: ParcelMeshProps) {
         <meshStandardMaterial color={soil} roughness={1} />
       </mesh>
       {parcel.stage !== "blocked" && parcel.stage !== "empty" && (
-        <Tomato stage={parcel.stage as "seed" | "sprout" | "growing" | "mature"} />
+        <CropModel crop={crop} stage={parcel.stage as "seed" | "sprout" | "growing" | "mature"} />
       )}
       {parcel.stage === "seed" && (
         <mesh position={[0, 0.1, 0]}>
@@ -102,8 +108,66 @@ function DeliveryTruck() {
   );
 }
 
+function WorkerAgents() {
+  const workers = useGameStore((state) => state.farm.workers);
+  const colors = { planting: "#b96d3f", watering: "#4f91a5", harvesting: "#d6a84b" };
+
+  return (
+    <>
+      {workers.map((worker) => (
+        <group key={worker.id} position={[worker.position.x, 0.28, worker.position.z]}>
+          <mesh castShadow>
+            <capsuleGeometry args={[0.12, 0.28, 4, 8]} />
+            <meshStandardMaterial color={colors[worker.role]} roughness={0.75} />
+          </mesh>
+          <mesh castShadow position={[0, 0.34, 0]}>
+            <sphereGeometry args={[0.13, 10, 8]} />
+            <meshStandardMaterial color="#d9b38c" roughness={0.8} />
+          </mesh>
+        </group>
+      ))}
+    </>
+  );
+}
+
+function EraBuildings() {
+  const shedLevel = useGameStore((state) => state.farm.shedLevel);
+  const boxesLevel = useGameStore((state) => state.farm.boxesLevel);
+  const sprinklerLevel = useGameStore((state) => state.farm.sprinklerLevel);
+  if (shedLevel === 0 && boxesLevel === 0 && sprinklerLevel === 0) return null;
+  return (
+    <group position={[-3.25, 0, -2.8]}>
+      {shedLevel > 0 && (
+        <mesh castShadow position={[0, 0.32, 0]}>
+          <boxGeometry args={[1.1, 0.64, 0.75]} />
+          <meshStandardMaterial color="#a66c3b" roughness={0.85} />
+        </mesh>
+      )}
+      {boxesLevel > 0 && (
+        <mesh castShadow position={[1.15, 0.18, 0.1]}>
+          <boxGeometry args={[0.55, 0.36, 0.55]} />
+          <meshStandardMaterial color="#c4a15a" roughness={0.9} />
+        </mesh>
+      )}
+      {sprinklerLevel > 0 && (
+        <group position={[1.15, 0.05, -0.9]}>
+          <mesh castShadow position={[0, 0.28, 0]}>
+            <cylinderGeometry args={[0.08, 0.12, 0.56, 8]} />
+            <meshStandardMaterial color="#7894a0" roughness={0.55} />
+          </mesh>
+          <mesh position={[0, 0.58, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <torusGeometry args={[0.24, 0.025, 6, 16]} />
+            <meshStandardMaterial color="#78bcd1" roughness={0.4} />
+          </mesh>
+        </group>
+      )}
+    </group>
+  );
+}
+
 export function FarmScene({ zoom }: { readonly zoom: number }) {
   const parcels = useGameStore((state) => state.farm.parcels);
+  const eraIndex = useGameStore((state) => state.game.eraIndex);
   const positions = useMemo(() => parcels.map((parcel) => ({ id: parcel.id, x: parcel.x, z: parcel.z })), [parcels]);
 
   return (
@@ -113,7 +177,7 @@ export function FarmScene({ zoom }: { readonly zoom: number }) {
       dpr={[1, 1.5]}
       camera={{ position: [7, 7, 7], zoom, near: 0.1, far: 100 }}
     >
-      <color attach="background" args={["#98b879"]} />
+      <color attach="background" args={[eraIndex >= 2 ? "#88b866" : "#98b879"]} />
       <ambientLight intensity={1.4} />
       <directionalLight position={[5, 10, 6]} intensity={2.2} castShadow />
       <mesh receiveShadow position={[0, -0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -124,6 +188,8 @@ export function FarmScene({ zoom }: { readonly zoom: number }) {
         <ParcelMesh key={position.id} {...position} />
       ))}
       <DeliveryTruck />
+      <WorkerAgents />
+      <EraBuildings />
     </Canvas>
   );
 }
